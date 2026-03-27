@@ -1,0 +1,146 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  displayName  String?
+  plan         String    @default("free") // free | pro | enterprise
+  googleTokens Json?     // encrypted Google OAuth tokens
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  voices       Voice[]
+  jobs         Job[]
+  videos       Video[]
+
+  @@map("users")
+}
+
+// ─── Voices ──────────────────────────────────────────────────────────────────
+model Voice {
+  id                String    @id @default(uuid())
+  userId            String
+  label             String
+  elevenLabsVoiceId String    @unique
+  status            String    @default("processing") // processing | ready | failed
+  sampleUrl         String?
+  metadata          Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs             Job[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("voices")
+}
+
+// ─── Jobs (Pipeline Core) ────────────────────────────────────────────────────
+model Job {
+  id              String    @id @default(uuid())
+  userId          String
+  voiceId         String?
+  idempotencyKey  String?   @unique
+  
+  // pipeline state
+  status          String    @default("queued")
+  // queued | script_generating | script_ready |
+  // audio_generating | audio_ready |
+  // video_generating | video_processing | video_ready |
+  // pending_approval | approved | rejected |
+  // editing | edited |
+  // uploading | completed | failed
+
+  approvalMode    String    @default("auto") // auto | manual
+  autoScore       Float?    // 0.0–1.0 QA score
+  rejectionReason String?
+  attempts        Int       @default(0)
+  workerId        String?
+
+  // stage payloads
+  input           Json      // { topic, tone, avatarId, aspectRatio, durationTargetSec }
+  scriptResult    Json?     // { fullText, sections[], wordCount, estimatedDurationSec }
+  audioResult     Json?     // { s3Key, cdnUrl, durationSec, wordTimestamps[] }
+  videoResult     Json?     // { heygenVideoId, s3Key, cdnUrl, durationSec }
+  editResult      Json?     // { s3Key, cdnUrl, captionUrl, chapters[] }
+  storageResult   Json?     // { driveFileId, driveUrl }
+  errorInfo       Json?
+
+  scheduledAt     DateTime  @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id])
+  voice           Voice?    @relation(fields: [voiceId], references: [id])
+  video           Video?
+  events          JobEvent[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([status, scheduledAt])
+  @@map("jobs")
+}
+
+// ─── Videos (Completed) ──────────────────────────────────────────────────────
+model Video {
+  id           String   @id @default(uuid())
+  jobId        String   @unique
+  userId       String
+  title        String?
+  scriptText   String
+  videoUrl     String   // final CDN URL
+  thumbnailUrl String?
+  driveFileId  String?
+  driveUrl     String?
+  durationSec  Int?
+  aspectRatio  String?
+  sizeBytes    BigInt?
+  isDeleted    Boolean  @default(false)
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  job          Job      @relation(fields: [jobId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("videos")
+}
+
+// ─── Job Events (Audit Log) ───────────────────────────────────────────────────
+model JobEvent {
+  id        BigInt   @id @default(autoincrement())
+  jobId     String
+  event     String   // status_change | retry | webhook_received | approval
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  job       Job      @relation(fields: [jobId], references: [id])
+
+  @@index([jobId])
+  @@map("job_events")
+}
+
+// ─── Webhook Logs ─────────────────────────────────────────────────────────────
+model WebhookLog {
+  id         String   @id @default(uuid())
+  source     String   @default("heygen")
+  rawPayload Json
+  processed  Boolean  @default(false)
+  error      String?
+  receivedAt DateTime @default(now())
+
+  @@map("webhook_logs")
+}
