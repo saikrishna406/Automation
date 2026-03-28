@@ -37,9 +37,9 @@ export function startScriptWorker() {
 
       // ── Advance to next stage: Audio Generation ────────────────────────────
       await audioQueue.add(
-        `audio:${jobId}`,
+        `audio-${jobId}`,
         { jobId },
-        { jobId: `audio:${jobId}`, priority: 5 }
+        { jobId: `audio-${jobId}`, priority: 5 }
       );
 
       return { status: 'script_ready', wordCount: scriptResult.wordCount };

@@ -40,9 +40,9 @@ export function startAudioWorker() {
 
       // ── Advance to Video Generation ────────────────────────────────────────
       await videoQueue.add(
-        `video:${jobId}`,
+        `video-${jobId}`,
         { jobId },
-        { jobId: `video:${jobId}`, priority: 5 }
+        { jobId: `video-${jobId}`, priority: 5 }
       );
 
       return { status: 'audio_ready', durationSec: audioResult.durationSec };

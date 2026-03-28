@@ -37,9 +37,9 @@ export function startApprovalWorker(): Worker {
           await logJobEvent(jobId, 'auto_approved', { score: qaScore.overall });
 
           await editQueue.add(
-            `edit:${jobId}`,
+            `edit-${jobId}`,
             { jobId },
-            { jobId: `edit:${jobId}` }
+            { jobId: `edit-${jobId}` }
           );
         } else {
           // ── QA failed — escalate to manual review ─────────────────────────

@@ -27,6 +27,24 @@ export async function miscRoutes(app: FastifyInstance) {
     return reply.send({ message: 'Google Drive connected successfully' });
   });
 
+  // ─── Dev Auth ─────────────────────────────────────────────────────────────
+  app.post('/auth/token', async (request, reply) => {
+    // Ensure the mock user exists in the database to prevent foreign key errors
+    await prisma.user.upsert({
+      where: { id: 'dev_user_123' },
+      update: {},
+      create: {
+        id: 'dev_user_123',
+        email: 'dev@example.com',
+        displayName: 'Developer',
+      },
+    });
+
+    // Generate a valid token for the mock user
+    const token = await reply.jwtSign({ id: 'dev_user_123', role: 'admin' });
+    return reply.send({ token });
+  });
+
   // ─── Voices ───────────────────────────────────────────────────────────────
   app.get('/voices', async (request, reply) => {
     const userId = (request as any).user?.id;

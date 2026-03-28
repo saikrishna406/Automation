@@ -71,9 +71,9 @@ export function startVideoWorker() {
 
       // ── Advance to Approval ────────────────────────────────────────────────
       await approvalQueue.add(
-        `approval:${jobId}`,
+        `approval-${jobId}`,
         { jobId },
-        { jobId: `approval:${jobId}` }
+        { jobId: `approval-${jobId}` }
       );
 
       return { status: 'video_ready', durationSec: videoResult.durationSec };

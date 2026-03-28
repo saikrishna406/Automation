@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import './index.css';
 
-const API = 'http://localhost:3000/api/v1';
+const API = '/api/v1';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type JobStatus =
@@ -445,6 +445,20 @@ function ApprovalPage({ jobs, onUpdate }: { jobs: Job[]; onUpdate: () => void })
 // ─── Login Page ───────────────────────────────────────────────────────────────
 function LoginPage({ onLogin }: { onLogin: (token: string) => void }) {
   const [token, setToken] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function generateDevToken() {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/v1/auth/token', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } });
+      const data = await res.json();
+      if (data.token) {
+        setToken(data.token);
+      }
+    } catch {}
+    setLoading(false);
+  }
+
   return (
     <div className="flex-center" style={{height:'100vh',flexDirection:'column',gap:24}}>
       <div style={{textAlign:'center',marginBottom:8}}>
@@ -457,12 +471,12 @@ function LoginPage({ onLogin }: { onLogin: (token: string) => void }) {
           <label className="form-label">JWT Token</label>
           <input className="form-input" type="password" placeholder="eyJ..." value={token} onChange={e => setToken(e.target.value)} />
         </div>
-        <button className="btn btn-primary" style={{width:'100%'}} id="login-btn" onClick={() => { localStorage.setItem('jwt_token', token); onLogin(token); }}>
+        <button className="btn btn-primary" style={{width:'100%', marginBottom: 12}} id="login-btn" onClick={() => { localStorage.setItem('jwt_token', token); onLogin(token); }}>
           Enter Dashboard
         </button>
-        <div style={{marginTop:12,fontSize:12,color:'var(--text-muted)',textAlign:'center'}}>
-          Get a token via: <code style={{color:'var(--accent)'}}>POST /api/v1/auth/token</code>
-        </div>
+        <button className="btn btn-secondary" style={{width:'100%'}} disabled={loading} onClick={generateDevToken}>
+          {loading ? '..."' : '🛠️ Generate Dev Token'}
+        </button>
       </div>
     </div>
   );

@@ -41,9 +41,9 @@ export function startEditWorker() {
 
       // ── Advance to Drive Upload ────────────────────────────────────────────
       await storageQueue.add(
-        `storage:${jobId}`,
+        `storage-${jobId}`,
         { jobId },
-        { jobId: `storage:${jobId}` }
+        { jobId: `storage-${jobId}` }
       );
 
       return { status: 'edited', finalDurationSec: editResult.finalDurationSec };

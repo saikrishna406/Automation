@@ -80,9 +80,9 @@ export async function webhooksRoute(app: FastifyInstance) {
 
         // Advance to approval
         await approvalQueue.add(
-          `approval:${job.id}`,
+          `approval-${job.id}`,
           { jobId: job.id },
-          { jobId: `approval:${job.id}` }
+          { jobId: `approval-${job.id}` }
         );
 
         await prisma.webhookLog.updateMany({

@@ -66,7 +66,7 @@ export async function jobsRoutes(app: FastifyInstance) {
     });
 
     // ── Enqueue script generation ──────────────────────────────────────────
-    await scriptQueue.add(`script:${job.id}`, { jobId: job.id }, { jobId: `script:${job.id}` });
+    await scriptQueue.add(`script-${job.id}`, { jobId: job.id }, { jobId: `script-${job.id}` });
 
     await logJobEvent(job.id, 'job_created', { userId, topic: input.topic });
 
@@ -113,7 +113,7 @@ export async function jobsRoutes(app: FastifyInstance) {
         },
       });
 
-      await scriptQueue.add(`script:${job.id}`, { jobId: job.id }, { jobId: `script:${job.id}` });
+      await scriptQueue.add(`script-${job.id}`, { jobId: job.id }, { jobId: `script-${job.id}` });
       jobIds.push(job.id);
     }
 
@@ -213,7 +213,7 @@ export async function jobsRoutes(app: FastifyInstance) {
     if (action === 'approve') {
       await transitionJob(jobId, JobStatus.APPROVED);
       await logJobEvent(jobId, 'manually_approved', { userId });
-      await editQueue.add(`edit:${jobId}`, { jobId }, { jobId: `edit:${jobId}` });
+      await editQueue.add(`edit-${jobId}`, { jobId }, { jobId: `edit-${jobId}` });
       return reply.send({ message: 'Approved — video editing started', jobId });
     }
 
